@@ -7,7 +7,7 @@ from django.db import models
 
 class Location(models.Model):
     '''id достропримечательности (устанавливается тестирующей системой)'''  # todo 32р беззн число
-    id = models.IntegerField(primary_key=True)
+    id = models.PositiveIntegerField(primary_key=True)
     '''описание достопримечательности (длина не ограничена)'''
     place = models.TextField()
     '''название страны расположения (50 символов максимум)'''
@@ -15,7 +15,7 @@ class Location(models.Model):
     '''название города (50 символов максимум)'''
     city = models.CharField(max_length=50)
     '''дистанция от города по прямой в километрах'''  # todo 32р беззн число
-    distance = models.IntegerField()
+    distance = models.PositiveSmallIntegerField()
 
 
 """Класс, отвечающий за пользователя. 
@@ -29,9 +29,9 @@ class User(models.Model):
     )
 
     '''id человека (устанавливается тестирующей системой)'''  # todo 32р беззн число
-    id = models.IntegerField(primary_key=True)
+    id = models.PositiveIntegerField(primary_key=True)
     '''электронная почта (100 символов максимум)'''
-    email = models.CharField(max_length=100, verbose_name="электронная почта")  # todo email also unique
+    email = models.EmailField(verbose_name="электронная почта")  # todo email also unique
     '''имя (50 символов максимум)'''
     first_name = models.CharField(max_length=50, verbose_name="имя")
     '''фамилия (50 символов максимум)'''
@@ -64,7 +64,7 @@ class Visit(models.Model):
         five = ChoiceItem(5)
 
     '''id посещения (устанавливается тестирующей системой)'''  # todo 32р беззн число
-    id = models.IntegerField(primary_key=True)
+    id = models.PositiveIntegerField(primary_key=True)
     '''id достопримечательности'''  # todo 32р беззн число
     location = models.ForeignKey(Location, on_delete=models.CASCADE)  # todo cascale ли
     '''id путешественника'''
