@@ -10,3 +10,19 @@ def index(request):
 def getEntity(request):
     # todo сделать выборку из таблички
     return None
+
+
+def getPersonVisitList(request):
+    return None
+
+
+def getLocationAverageMark(request):
+    return None
+
+
+def updateUser(request):
+    return None
+
+
+def createUser(request):
+    return None
