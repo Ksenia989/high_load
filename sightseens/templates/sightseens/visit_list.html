@@ -1,0 +1,10 @@
+{% if all_visits_list %}
+    <ul>
+        {% for visit in all_visits_list %}
+{#            <li><a href="{% url 'get_entity' user.id %}">{{ visit.id }}{{ user.first_name }}</a></li>#}
+            <li><a href="sightseens/visit/{{ user.id }}/">{{ visit.id }}{{ user.first_name }}</a></li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No views are available.</p>
+{% endif %}
