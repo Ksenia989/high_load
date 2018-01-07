@@ -1,9 +1,8 @@
 from django.db import models
+from rest_framework import serializers
 
 
 #  todo разнести по разным файликам
-# Create your models here.
-
 
 class Location(models.Model):
     '''id достропримечательности (устанавливается тестирующей системой)'''  # todo 32р беззн число
@@ -16,6 +15,18 @@ class Location(models.Model):
     city = models.CharField(max_length=50)
     '''дистанция от города по прямой в километрах'''  # todo 32р беззн число
     distance = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return '\n id = %s,\n place = %s,\n country = %s,\n city = %s,\n distance = %s' % \
+               (self.id, self.place, self.country, self.city, self.distance)
+
+
+class LocationSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    place = serializers.CharField()
+    country = serializers.CharField(max_length=50)
+    city = serializers.CharField(max_length=50)
+    distance = serializers.IntegerField()
 
 
 """Класс, отвечающий за пользователя. 
@@ -38,17 +49,21 @@ class User(models.Model):
     last_name = models.CharField(max_length=50, verbose_name="фамилия")
     '''пол (1 символ)'''
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="пол")
-    '''дата рождения в timestamp (задаётся параметромauto_now_add=True)'''
+    '''дата рождения в timestamp (задаётся параметром auto_now_add=True)'''
     birth_date = models.DateTimeField(auto_now_add=True, verbose_name="дата рождения")
 
-    # class Meta:
-    #     unique_together = ("id", "email", )
     def __str__(self):
         return '\n id = %s,\n first_name = %s,\n last_name = %s,\n email = %s,\n gender = %s,\n birth_date = %s' % \
                (self.id, self.first_name, self.last_name, self.email, self.gender, self.birth_date)
 
-    def func1(self):
-        return self.id == 42
+
+class UserSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField(max_length=50)
+    last_name = serializers.CharField(max_length=50)
+    gender = serializers.CharField(max_length=1)
+    birth_date = serializers.DateTimeField(format='%s')  # todo timestamp
 
 
 class Visit(models.Model):
@@ -77,3 +92,11 @@ class Visit(models.Model):
     def __str__(self):
         return 'Sigthseen is: %s, located in %s, user is %s, he visited it in %s, mark is %s' % (
             self.id, self.location, self.user, self.visited_at, self.mark)
+
+
+class VisitSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    location = serializers.SlugRelatedField(slug_field='id', many=False, read_only=True)
+    user = serializers.SlugRelatedField(slug_field='id', many=False, read_only=True)
+    visited_at = serializers.DateTimeField(format='%s')
+    mark = serializers.IntegerField()
