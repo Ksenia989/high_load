@@ -100,3 +100,35 @@ class VisitSerializer(serializers.Serializer):
     user = serializers.SlugRelatedField(slug_field='id', many=False, read_only=True)
     visited_at = serializers.DateTimeField(format='%s')
     mark = serializers.IntegerField()
+
+
+class PlaceSerializer(serializers.Serializer):
+    place = serializers.CharField()
+
+class ShortVisitSerializer(serializers.HyperlinkedModelSerializer):
+    mark = serializers.IntegerField()
+    visited_at = serializers.DateTimeField(format='%s')
+
+    def __init__(self, *args, **kwargs):
+        fields = kwargs.pop('fields', None)
+
+        # Instantiate the superclass normally
+        super(ShortVisitSerializer, self).__init__(*args, **kwargs)
+
+        if fields is not None:
+            # Drop any fields that are not specified in the `fields` argument.
+            allowed = set(fields)
+            existing = set(self.fields.keys())
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
+
+    class Meta:
+        model = Visit
+        fields = ('mark', 'visited_at')
+
+
+    def perform_create(self, serializer):
+        mark = serializers.IntegerField()
+        visited_at = serializers.DateTimeField(format='%s')
+        # place = serializers.ReadOnlyField(source='location.place')
+        serializer.save(place='55')
