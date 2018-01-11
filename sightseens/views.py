@@ -1,11 +1,12 @@
 # Create your views here.
+from django.http import Http404
 from django.http import HttpResponse
 from django.http import JsonResponse
-from django.http import Http404
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils.six import BytesIO
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
+
 from sightseens.models import User, Visit, Location, UserSerializer, VisitSerializer, LocationSerializer, \
     ShortVisitSerializer, PlaceSerializer
 
@@ -81,13 +82,6 @@ def validateListViaRequest(visit_list, dict):
     return visit_list
 
 
-def check_int(from_date):
-    try:
-        int(float(from_date))
-    except ValueError:
-        raise Http404()
-
-
 def getPersonVisitList(request, entity_id):
     user_visits = get_list_or_404(Visit, user=entity_id)
     my_list = []
@@ -103,13 +97,87 @@ def getPersonVisitList(request, entity_id):
         full_data['place'] = ld.get('place')
         my_list.append(full_data)
 
-    #     оборачиваем в visits
-    new_dict= {'visits': my_list}
+    # оборачиваем в visits
+    new_dict = {'visits': my_list}
     return JsonResponse(new_dict, safe=False)
 
 
-def getLocationAverageMark(request):
-    return None
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import calendar
+
+
+def select_visits(visits_for_location, dict):
+    FROM_DATE = 'fromDate'
+    TO_DATE = 'toDate'
+    FROM_AGE = 'fromAge'
+    TO_AGE = 'toAge'
+    GENDER = 'gender'
+
+    if FROM_DATE in dict.keys():
+        res_list = []
+        from_date = dict.get(FROM_DATE)
+        check_int(from_date)
+        for el in visits_for_location:
+            # эта ужастная конструкция преобразует datetime в timestamp в строке (чтобы сравнить в фронтом)
+            # а каст к инту, т.к. возвращается float (хз, почему)
+            if int(el.visited_at.timestamp()) > int(float(from_date)):
+                res_list.append(el)
+                visits_for_location = res_list
+    if TO_DATE in dict.keys():
+        to_date = dict.get(TO_DATE)
+        check_int(to_date)
+        res_list = []
+        for el in visits_for_location:
+            if int(el.visited_at.timestamp()) < int(float(to_date)):
+                res_list.append(el)
+        visits_for_location = res_list
+    if FROM_AGE in dict.keys():
+        from_age = dict.get(FROM_AGE)
+        res_list = []
+        check_int(from_age)
+        now = datetime.now() + relativedelta(years=int(from_age))
+        timestamp = calendar.timegm(now.timetuple())
+        for el in visits_for_location:
+            user = User.objects.get(pk=el.user.id)
+            if int(user.birth_date.timestamp()) > timestamp:
+                res_list.append(el)
+        visits_for_location = res_list
+    if TO_AGE in dict.keys():
+        to_age = dict.get(TO_AGE)
+        check_int(to_age)
+        res_list = []
+        now = datetime.now() + relativedelta(years=int(to_age))
+        timestamp = calendar.timegm(now.timetuple())
+        for el in visits_for_location:
+            user = User.objects.get(pk=el.user.id)
+            if int(user.birth_date.timestamp()) < timestamp:
+                res_list.append(el)
+        visits_for_location = res_list
+    if GENDER in dict.keys():
+        gender = dict.get(GENDER)
+        res_list = []
+        for el in visits_for_location:
+            user = User.objects.get(pk=el.user.id)
+            if user.gender == gender:
+                res_list.append(el)
+        visits_for_location = res_list
+
+    return visits_for_location
+
+
+def getLocationAverageMark(request, entity_id):
+    sum = 0
+    visits_for_location = get_list_or_404(Visit, location=entity_id)
+    visits_for_location = select_visits(visits_for_location, request.GET)
+    for visit in visits_for_location:
+        sum = sum + visit.mark
+    average = 0
+    if len(visits_for_location) != 0:
+        average = sum / len(visits_for_location)
+    average = round(average, 5)
+    dict1 = {'avg': average}
+    return JsonResponse(dict1)
 
 
 def updateUser(request):
@@ -125,3 +193,10 @@ def get_json_data(serializer):
     json = JSONRenderer().render(dict_user)
     stream = BytesIO(json)
     return JSONParser().parse(stream)
+
+
+def check_int(from_date):
+    try:
+        int(float(from_date))
+    except ValueError:
+        raise Http404()
