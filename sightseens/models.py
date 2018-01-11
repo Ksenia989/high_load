@@ -84,7 +84,7 @@ class Visit(models.Model):
     location = models.ForeignKey(Location, on_delete=models.CASCADE)  # todo cascale ли
     '''id путешественника'''
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    '''дата посещения в timestamp (задаётся параметромauto_now_add=True)'''
+    '''дата посещения в timestamp (задаётся параметром auto_now_add=True)'''
     visited_at = models.DateTimeField(auto_now_add=True)
     '''оценка 1 .. 5'''
     mark = models.PositiveSmallIntegerField(choices=Mark.choices)
@@ -132,3 +132,6 @@ class ShortVisitSerializer(serializers.HyperlinkedModelSerializer):
         visited_at = serializers.DateTimeField(format='%s')
         # place = serializers.ReadOnlyField(source='location.place')
         serializer.save(place='55')
+
+
+
