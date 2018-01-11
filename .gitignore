@@ -1,18 +1,3 @@
-Использование: grep [ПАРАМЕТР]… ШАБЛОН [ФАЙЛ]…
-Поиск ШАБЛОНА в каждом ФАЙЛЕ.
-Пример: grep -i 'hello world' menu.h main.c
-
-Шаблон выбора и его интерпретация:
-  -E, --extended-regexp  ШАБЛОН — расширенное регулярное выражение
-  -F, --fixed-regexp     ШАБЛОН — строки, разделённые символом новой строки
-  -G, --basic-regexp     ШАБЛОН — простое регулярное выражение (по умолчанию)
-  -P, --perl-regexp      ШАБЛОН — регулярное выражения языка Perl
-  -e, --regexp=ШАБЛОН    использовать ШАБЛОН для поиска
-  -f, --file=ФАЙЛ        брать ШАБЛОН из ФАЙЛа
-  -i, --ignore-case      игнорировать различие регистра
-  -w, --word-regexp      ШАБЛОН должен подходить ко всем словам
-  -x, --line-regexp      ШАБЛОН должен подходить ко всей строке
-  -z, --null-data        строки разделяются байтом с нулевым значением, а не
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -20,6 +5,18 @@ __pycache__/
 
 # C extensions
 *.so
+
+# Django
+.installed.cfg
+bin
+develop-eggs
+dist
+downloads
+eggs
+parts
+src/*.egg-info
+lib
+lib64
 
 # Distribution / packaging
 .Python
