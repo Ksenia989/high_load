@@ -7,5 +7,5 @@ urlpatterns = [
     path('<str:entity>/<int:entity_id>', views.getEntity, name='get_entity'),
     path('users/<int:entity_id>/visits', views.getPersonVisitList, name='get_visit_list_for_person'),
     path('locations/<int:entity_id>/avg', views.getLocationAverageMark, name='get_average_mark_for_location'),
-    path('<int:entity_id>/new', views.createUser, name='new_user'),
+    path('<str:entity>/new', views.create_entity, name='new_entity'),
 ]

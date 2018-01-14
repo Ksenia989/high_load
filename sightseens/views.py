@@ -1,11 +1,17 @@
 # Create your views here.
+from django.db import IntegrityError
 from django.http import Http404
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils.six import BytesIO
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import calendar
 
 from sightseens.models import User, Visit, Location, UserSerializer, VisitSerializer, LocationSerializer, \
     ShortVisitSerializer, PlaceSerializer
@@ -32,7 +38,7 @@ def getEntity(request, entity, entity_id):
             serializer = LocationSerializer(u)
             data = get_json_data(serializer)
         else:
-            u = HttpResponse(status=404)
+            u = Http404()
     return JsonResponse(data=data, safe=False)
 
 
@@ -100,11 +106,6 @@ def getPersonVisitList(request, entity_id):
     # оборачиваем в visits
     new_dict = {'visits': my_list}
     return JsonResponse(new_dict, safe=False)
-
-
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-import calendar
 
 
 def select_visits(visits_for_location, dict):
@@ -184,8 +185,42 @@ def updateUser(request):
     return None
 
 
-def createUser(request):
-    return None
+@csrf_exempt
+def create_entity(request, entity):
+    global u
+    if request.method == 'POST':
+        if entity == 'users':
+            stream = BytesIO(request.body)
+            data = JSONParser().parse(stream)
+            serializer = UserSerializer(data=data)
+            u = check_user_body(serializer)
+        elif entity == 'visits':
+            stream = BytesIO(request.body)
+            data = JSONParser().parse(stream)
+            serializer = VisitSerializer(data=data)
+            u = check_user_body(serializer)
+        elif entity == 'locations':
+            stream = BytesIO(request.body)
+            data = JSONParser().parse(stream)
+            serializer = LocationSerializer(data=data)
+            u = check_user_body(serializer)
+        else:
+            u = Http404()
+    return HttpResponse(u.content, status=u.status_code)
+
+
+# todo
+def check_user_body(serializer):
+    try:
+        if serializer.is_valid(raise_exception=True):
+            obj2=User.objects.create(**serializer.validated_data)
+            obj2.save()
+    except ValidationError as error:
+        return HttpResponseBadRequest()
+    except IntegrityError as error:
+        return HttpResponseBadRequest()
+    # todo load_json_or_bad_request() - кастомный
+    return HttpResponse("{}", status=200)
 
 
 def get_json_data(serializer):
@@ -195,6 +230,7 @@ def get_json_data(serializer):
     return JSONParser().parse(stream)
 
 
+# todo посмотреть, 404 должно выкидывать, или 400
 def check_int(from_date):
     try:
         int(float(from_date))

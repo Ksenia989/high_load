@@ -1,11 +1,26 @@
+import datetime
 from django.db import models
 from rest_framework import serializers
 
 
 #  todo разнести по разным файликам
 
+# todo слишком много allow null - поправить на аннотацию мб
+class TimeStampField(serializers.Field):
+    def to_native(self, value):
+        epoch = datetime.datetime(1970, 1, 1)
+        return int((value - epoch).total_seconds())
+
+    # как to string
+    def to_representation(self, value):
+        return "%s" % value
+
+    def to_internal_value(self, data):
+        return TimeStampField(data)
+
+
 class Location(models.Model):
-    '''id достропримечательности (устанавливается тестирующей системой)'''  # todo 32р беззн число
+    """id достропримечательности (устанавливается тестирующей системой)"""  # todo 32р беззн число
     id = models.PositiveIntegerField(primary_key=True)
     '''описание достопримечательности (длина не ограничена)'''
     place = models.TextField()
@@ -40,7 +55,7 @@ class User(models.Model):
     )
 
     '''id человека (устанавливается тестирующей системой)'''  # todo 32р беззн число
-    id = models.PositiveIntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     '''электронная почта (100 символов максимум)'''
     email = models.EmailField(verbose_name="электронная почта")  # todo email also unique
     '''имя (50 символов максимум)'''
@@ -56,14 +71,16 @@ class User(models.Model):
         return '\n id = %s,\n first_name = %s,\n last_name = %s,\n email = %s,\n gender = %s,\n birth_date = %s' % \
                (self.id, self.first_name, self.last_name, self.email, self.gender, self.birth_date)
 
-
 class UserSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     email = serializers.EmailField()
     first_name = serializers.CharField(max_length=50)
     last_name = serializers.CharField(max_length=50)
     gender = serializers.CharField(max_length=1)
-    birth_date = serializers.DateTimeField(format='%s')  # todo timestamp
+    birth_date = TimeStampField()
+
+    def create(self, validated_data):
+        return User.objects.create(**validated_data)
 
 
 class Visit(models.Model):
@@ -79,7 +96,7 @@ class Visit(models.Model):
         five = ChoiceItem(5)
 
     '''id посещения (устанавливается тестирующей системой)'''  # todo 32р беззн число
-    id = models.PositiveIntegerField(primary_key=True)
+    # id = models.PositiveIntegerField(primary_key=True, unique=True)
     '''id достопримечательности'''  # todo 32р беззн число
     location = models.ForeignKey(Location, on_delete=models.CASCADE)  # todo cascale ли
     '''id путешественника'''
@@ -98,12 +115,13 @@ class VisitSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     location = serializers.SlugRelatedField(slug_field='id', many=False, read_only=True)
     user = serializers.SlugRelatedField(slug_field='id', many=False, read_only=True)
-    visited_at = serializers.DateTimeField(format='%s')
+    visited_at = TimeStampField()
     mark = serializers.IntegerField()
 
 
 class PlaceSerializer(serializers.Serializer):
     place = serializers.CharField()
+
 
 class ShortVisitSerializer(serializers.HyperlinkedModelSerializer):
     mark = serializers.IntegerField()
@@ -126,12 +144,7 @@ class ShortVisitSerializer(serializers.HyperlinkedModelSerializer):
         model = Visit
         fields = ('mark', 'visited_at')
 
-
     def perform_create(self, serializer):
         mark = serializers.IntegerField()
         visited_at = serializers.DateTimeField(format='%s')
-        # place = serializers.ReadOnlyField(source='location.place')
         serializer.save(place='55')
-
-
-
