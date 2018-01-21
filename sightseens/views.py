@@ -1,4 +1,8 @@
 # Create your views here.
+import calendar
+from datetime import datetime
+
+from dateutil.relativedelta import relativedelta
 from django.db import IntegrityError
 from django.http import Http404
 from django.http import HttpResponse, HttpResponseBadRequest
@@ -9,12 +13,10 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-import calendar
 
-from sightseens.models import User, Visit, Location, UserSerializer, VisitSerializer, LocationSerializer, \
-    ShortVisitSerializer, PlaceSerializer
+from sightseens.models.Location import Location, LocationSerializer
+from sightseens.models.User import UserSerializer, User
+from sightseens.models.Visit import Visit, VisitSerializer, ShortVisitSerializer, PlaceSerializer
 
 
 def index(request):
@@ -193,33 +195,37 @@ def create_entity(request, entity):
             stream = BytesIO(request.body)
             data = JSONParser().parse(stream)
             serializer = UserSerializer(data=data)
-            u = check_user_body(serializer)
+            u = save_json_or_bad_request(serializer, clazz=User)
         elif entity == 'visits':
             stream = BytesIO(request.body)
             data = JSONParser().parse(stream)
             serializer = VisitSerializer(data=data)
-            u = check_user_body(serializer)
+            u = save_json_or_bad_request(serializer, Visit)
         elif entity == 'locations':
             stream = BytesIO(request.body)
             data = JSONParser().parse(stream)
             serializer = LocationSerializer(data=data)
-            u = check_user_body(serializer)
+            u = save_json_or_bad_request(serializer, Location)
         else:
             u = Http404()
     return HttpResponse(u.content, status=u.status_code)
 
 
 # todo
-def check_user_body(serializer):
+def save_json_or_bad_request(serializer, clazz):
     try:
         if serializer.is_valid(raise_exception=True):
-            obj2=User.objects.create(**serializer.validated_data)
-            obj2.save()
+            if clazz == Visit:
+                obj2 = serializer.create(serializer.initial_data)
+                obj2.save()
+            else:
+                obj2 = clazz.objects.create(**serializer.validated_data)
+                obj2.save()
+
     except ValidationError as error:
         return HttpResponseBadRequest()
     except IntegrityError as error:
         return HttpResponseBadRequest()
-    # todo load_json_or_bad_request() - кастомный
     return HttpResponse("{}", status=200)
 
 
