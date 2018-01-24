@@ -12,4 +12,4 @@ class TimeStampField(serializers.Field):
         return "%s" % value
 
     def to_internal_value(self, data):
-        return TimeStampField(data)
+        return TimeStampField(data).__str__()

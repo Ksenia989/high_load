@@ -40,4 +40,3 @@ class UserSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=50)
     gender = serializers.CharField(max_length=1)
     birth_date = TimeStampField()
-

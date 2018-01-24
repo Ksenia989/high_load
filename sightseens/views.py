@@ -1,6 +1,7 @@
 # Create your views here.
 import calendar
 from datetime import datetime
+import datetime
 
 from dateutil.relativedelta import relativedelta
 from django.db import IntegrityError
@@ -23,6 +24,45 @@ def index(request):
     return HttpResponse("Hello, world! It's my first Django project")
 
 
+#todo
+def update_visit(oldVisit, data):
+    isCorrenct = right_or_404(data)
+    if isCorrenct:
+        if 'location' in data:
+            l=Location.objects.filter(pk=data['location'])
+            oldVisit.location = l
+        if 'user' in data:
+            u=User.objects.filter(pk=data['user'])
+            oldVisit.user = u
+
+
+        if 'mark' in data:
+            oldVisit.mark = data['mark']
+        if 'visited_at' in data:
+            oldVisit.visited_at = datetime.datetime.fromtimestamp(
+                int(data['visited_at']))
+    else:
+        return isCorrenct
+    oldVisit.save()
+
+
+def update_location(oldLocation, data):
+    isCorrenct = right_or_404(data)
+    if isCorrenct:
+        if 'place' in data:
+            oldLocation.place = data['place']
+        if 'country' in data:
+            oldLocation.country = data['country']
+        if 'city' in data:
+            oldLocation.city = data['city']
+        if 'distance' in data:
+            oldLocation.distance = data['distance']
+    else:
+        return isCorrenct
+    oldLocation.save()
+
+
+@csrf_exempt
 # todo переименовать всё в pythonic style
 def getEntity(request, entity, entity_id):
     global u, data
@@ -41,6 +81,28 @@ def getEntity(request, entity, entity_id):
             data = get_json_data(serializer)
         else:
             u = Http404()
+    if request.method == 'POST':
+        if entity == 'users':
+            oldUser = get_object_or_404(User, pk=entity_id)
+            stream = BytesIO(request.body)
+            data = JSONParser().parse(stream)
+            updateUser(oldUser, data)
+            data = {}
+        elif entity == 'visits':
+            oldVisit = get_object_or_404(User, pk=entity_id)
+            stream = BytesIO(request.body)
+            data = JSONParser().parse(stream)
+            update_visit(oldVisit, data)
+            data = {}
+        elif entity == 'locations':
+            oldLocation = get_object_or_404(User, pk=entity_id)
+            stream = BytesIO(request.body)
+            data = JSONParser().parse(stream)
+            update_location(oldLocation, data)
+            data = {}
+        else:
+            u = Http404()
+
     return JsonResponse(data=data, safe=False)
 
 
@@ -183,8 +245,30 @@ def getLocationAverageMark(request, entity_id):
     return JsonResponse(dict1)
 
 
-def updateUser(request):
-    return None
+def right_or_404(dataDictionary):
+    for field in dataDictionary:
+        if field == None:
+            return HttpResponseBadRequest()
+    return True
+
+def updateUser(oldUser, dataDictionary):
+    isCorrenct = right_or_404(dataDictionary)
+    if isCorrenct:
+        if 'email' in dataDictionary:
+            oldUser.email = dataDictionary['email']
+        if 'first_name' in dataDictionary:
+            oldUser.first_name = dataDictionary['first_name']
+        if 'last_name' in dataDictionary:
+            oldUser.last_name = dataDictionary['last_name']
+        if 'gender' in dataDictionary:
+            oldUser.gender = dataDictionary['gender']
+        if 'birth_date' in dataDictionary:
+            oldUser.birth_date = datetime.datetime.fromtimestamp(
+                int(dataDictionary['birth_date'])
+            )
+    else:
+        return isCorrenct
+    oldUser.save()
 
 
 @csrf_exempt
@@ -211,7 +295,6 @@ def create_entity(request, entity):
     return HttpResponse(u.content, status=u.status_code)
 
 
-# todo
 def save_json_or_bad_request(serializer, clazz):
     try:
         if serializer.is_valid(raise_exception=True):
@@ -236,7 +319,6 @@ def get_json_data(serializer):
     return JSONParser().parse(stream)
 
 
-# todo посмотреть, 404 должно выкидывать, или 400
 def check_int(from_date):
     try:
         int(float(from_date))
